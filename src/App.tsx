@@ -8,7 +8,7 @@ import { createFreshListing, mockListings } from "./data/mockListings";
 import { runMockAgent } from "./lib/agent";
 import { buildSummary, defaultCriteria, getRankedListings } from "./lib/scoring";
 import { loadJson, saveJson, storageKeys } from "./lib/storage";
-import { AgentStep, ChatMessage, ChatSession, MemoryState, ModelConfig, RentalListing, SearchCriteria } from "./lib/types";
+import { AgentStep, ChatMessage, ChatSession, ListingApiConfig, ListingApiTestResult, MemoryState, ModelConfig, RentalListing, SearchCriteria } from "./lib/types";
 
 type WorkspaceView = "chat" | "listings" | "map" | "favorites" | "settings";
 type SourceFilter = "全部" | "贝壳" | "安居客" | "58同城";
@@ -18,6 +18,66 @@ const defaultModelConfig: ModelConfig = {
   baseUrl: "",
   apiKey: "",
   modelName: "",
+};
+
+const defaultListingApiConfig: ListingApiConfig = {
+  beike: {
+    enabled: true,
+    label: "Beike",
+    baseUrl: "https://gw-open.ke.com",
+    endpoint: "/Open/In/Building/Add",
+    method: "POST",
+    authType: "access_token",
+    accessToken: "",
+    bodyText: [
+      "city_name=北京市",
+      "district_name=海淀区",
+      "resblock_name=弘源首著大厦",
+      "building_name=1号楼",
+      "address=北京市海淀区",
+      "stat_usage=xzl",
+      "trade_owner=notreal",
+      "property_age=y50",
+      "build_area=30000.00",
+      "resblock_lat=40.049317",
+      "resblock_lng=116.311989",
+      "building_lat=40.049383",
+      "building_lng=116.312053",
+      "unit_count=2",
+      "floor_count=8",
+      "stand_high=2.5",
+      "stand_area=10.00",
+      "house_rate=78.00",
+      "cubage_rate=90.00",
+      "lift_count=6",
+      "developers=北京新奥特集团物业管理事业部",
+      "property=北京新奥特集团物业管理事业部",
+      "build_date=2000年1月1号",
+      "car_count=150",
+      "resblock_images=https://images.url.com",
+      "building_images=https://images.url.com",
+    ].join("\n"),
+  },
+  anjuke: {
+    enabled: false,
+    label: "Anjuke",
+    baseUrl: "",
+    endpoint: "/rent/listings",
+    method: "GET",
+    authType: "bearer",
+    accessToken: "",
+    bodyText: "",
+  },
+  wuba: {
+    enabled: false,
+    label: "58",
+    baseUrl: "",
+    endpoint: "/rent/listings",
+    method: "GET",
+    authType: "bearer",
+    accessToken: "",
+    bodyText: "",
+  },
 };
 
 const defaultMemory: MemoryState = {
@@ -99,6 +159,9 @@ export default function App() {
   });
   const [memory, setMemory] = useState<MemoryState>(() => loadJson(storageKeys.memory, defaultMemory));
   const [modelConfig, setModelConfig] = useState<ModelConfig>(() => loadJson(storageKeys.modelConfig, defaultModelConfig));
+  const [listingApiConfig, setListingApiConfig] = useState<ListingApiConfig>(() => loadJson(storageKeys.listingApiConfig, defaultListingApiConfig));
+  const [apiTestResults, setApiTestResults] = useState<ListingApiTestResult[]>([]);
+  const [isTestingApi, setIsTestingApi] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => loadJson<string[]>(storageKeys.favorites, []));
   const [listings, setListings] = useState<RentalListing[]>(mockListings);
   const [draft, setDraft] = useState("");
@@ -247,8 +310,50 @@ export default function App() {
     }, 450);
   }
 
-  function refreshListings() {
+  async function fetchListingApis() {
+    const response = await fetch("/api/platform-test", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ providers: listingApiConfig }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return (await response.json()) as { results: ListingApiTestResult[]; listings?: RentalListing[] };
+  }
+
+  async function testListingApis() {
+    setIsTestingApi(true);
+    try {
+      const payload = await fetchListingApis();
+      setApiTestResults(payload.results || []);
+      setNotice("房源平台 API 测试完成；未启用或未配置的平台会自动跳过。");
+    } catch (error) {
+      setApiTestResults([]);
+      setNotice(`房源平台 API 测试失败：${error instanceof Error ? error.message : "未知错误"}`);
+    } finally {
+      setIsTestingApi(false);
+    }
+  }
+
+  async function refreshListings() {
     setIsRefreshing(true);
+    try {
+      const payload = await fetchListingApis();
+      setApiTestResults(payload.results || []);
+      if (payload.listings?.length) {
+        setListings(payload.listings);
+        setLastRefreshAt(new Date().toISOString());
+        setNotice(`刷新完成：已从已启用平台加载 ${payload.listings.length} 条房源。`);
+        setIsRefreshing(false);
+        return;
+      }
+    } catch {
+      // Keep the MVP usable when the API is not configured or the dev server is running without the Node proxy.
+    }
+
     window.setTimeout(() => {
       const nextRefreshCount = refreshCount + 1;
       setRefreshCount(nextRefreshCount);
@@ -265,8 +370,8 @@ export default function App() {
   }
 
   function saveModelConfig() {
-    const ok = saveJson(storageKeys.modelConfig, modelConfig);
-    setNotice(ok ? "模型配置已保存到本机浏览器。" : "保存失败：浏览器可能禁用了本地存储。");
+    const ok = saveJson(storageKeys.modelConfig, modelConfig) && saveJson(storageKeys.listingApiConfig, listingApiConfig);
+    setNotice(ok ? "模型和房源平台 API 配置已保存到本机浏览器。" : "保存失败：浏览器可能禁用了本地存储。");
   }
 
   function startNewChat() {
@@ -375,12 +480,17 @@ export default function App() {
         <div className="settings-workspace">
           <SettingsPanel
             config={modelConfig}
+            listingApiConfig={listingApiConfig}
+            apiTestResults={apiTestResults}
             autoRefresh={autoRefresh}
             lastRefreshAt={lastRefreshAt}
             isRefreshing={isRefreshing}
+            isTestingApi={isTestingApi}
             onConfigChange={setModelConfig}
+            onListingApiConfigChange={setListingApiConfig}
             onSaveConfig={saveModelConfig}
             onRefresh={refreshListings}
+            onTestApi={testListingApis}
             onAutoRefreshChange={setAutoRefresh}
           />
           <section className="memory-panel">

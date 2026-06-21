@@ -1124,6 +1124,91 @@ button:disabled {
   padding: 0;
 }
 
+.config-form.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field textarea,
+.field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+  background: white;
+}
+
+.field textarea {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.provider-config-list {
+  display: grid;
+  gap: 12px;
+}
+
+.provider-config-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--soft);
+}
+
+.provider-config-head,
+.api-test-actions,
+.api-test-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.provider-config-head {
+  margin-bottom: 10px;
+}
+
+.provider-config-head span,
+.api-test-actions span,
+.api-test-result span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.api-test-actions {
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.api-test-results {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.api-test-result {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: white;
+}
+
+.api-test-result.ok {
+  border-color: rgba(39, 174, 96, 0.35);
+}
+
+.api-test-result.fail {
+  border-color: rgba(231, 76, 60, 0.35);
+}
+
+.api-test-result p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .notice-bar {
   position: fixed;
   left: calc(300px + (100vw - 300px) / 2);

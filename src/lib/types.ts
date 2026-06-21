@@ -63,6 +63,33 @@ export interface ModelConfig {
   modelName: string;
 }
 
+export type ListingApiProviderKey = "beike" | "anjuke" | "wuba";
+export type ListingApiMethod = "GET" | "POST";
+export type ListingApiAuthType = "access_token" | "bearer" | "x-api-key";
+
+export interface ListingApiProviderConfig {
+  enabled: boolean;
+  label: string;
+  baseUrl: string;
+  endpoint: string;
+  method: ListingApiMethod;
+  authType: ListingApiAuthType;
+  accessToken: string;
+  bodyText: string;
+}
+
+export type ListingApiConfig = Record<ListingApiProviderKey, ListingApiProviderConfig>;
+
+export interface ListingApiTestResult {
+  provider: ListingApiProviderKey;
+  label: string;
+  ok: boolean;
+  status?: number;
+  mode?: string;
+  message?: string;
+  sample?: unknown;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "agent";

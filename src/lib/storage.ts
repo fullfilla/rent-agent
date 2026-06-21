@@ -23,5 +23,6 @@ export const storageKeys = {
   activeSessionId: "rent-agent.active-session-id",
   memory: "rent-agent.memory",
   modelConfig: "rent-agent.model-config",
+  listingApiConfig: "rent-agent.listing-api-config",
   favorites: "rent-agent.favorites",
 };
