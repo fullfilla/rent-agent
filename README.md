@@ -154,6 +154,12 @@ npm start
 npm run preview
 ```
 
+## 测试截图
+
+当前项目未配置独立的 `npm test` 脚本；这里使用 `npm run build` 作为构建烟测，验证 TypeScript 编译和 Vite 生产构建是否通过。
+
+![Rent Agent 构建烟测结果](docs/screenshots/build-results.png)
+
 停止服务：
 
 ```text
