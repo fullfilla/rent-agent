@@ -156,9 +156,27 @@ npm run preview
 
 ## 测试截图
 
-当前项目未配置独立的 `npm test` 脚本；这里使用 `npm run build` 作为构建烟测，验证 TypeScript 编译和 Vite 生产构建是否通过。
+以下截图来自本地浏览器中的实际用户操作路径，覆盖主要功能页面。
 
-![Rent Agent 构建烟测结果](docs/screenshots/build-results.png)
+### Agent 对话
+
+![Agent 对话功能测试](docs/screenshots/user-agent-chat.png)
+
+### 房源聚合与筛选
+
+![房源聚合与筛选功能测试](docs/screenshots/user-listing-filter.png)
+
+### 地图找房
+
+![地图找房功能测试](docs/screenshots/user-map-search.png)
+
+### 收藏房源
+
+![收藏房源功能测试](docs/screenshots/user-favorites.png)
+
+### 设置与 API 配置
+
+![设置与 API 配置功能测试](docs/screenshots/user-settings-api.png)
 
 停止服务：
 
